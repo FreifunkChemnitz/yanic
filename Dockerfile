@@ -16,4 +16,5 @@ COPY --from=builder /src/yanic /yanic
 VOLUME /data
 WORKDIR /data
 
+EXPOSE 8080
 CMD ["/yanic", "serve", "--config", "/etc/yanic/config.toml"]
