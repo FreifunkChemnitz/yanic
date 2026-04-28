@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -18,9 +19,11 @@ func TestExpire(t *testing.T) {
 	// to get default (100%) path of testing
 	// config.PruneAfter.Duration = time.Hour * 24 * 6
 	nodes := &Nodes{
-		config:        config,
-		List:          make(map[string]*Node),
-		ifaceToNodeID: make(map[string]string),
+		config:              config,
+		List:                make(map[string]*Node),
+		ifaceToNodeID:       make(map[string]string),
+		ifaceToLinkType:     make(map[string]LinkType),
+		ifaceToLinkProtocol: make(map[string]LinkProtocol),
 	}
 
 	nodes.Update("expire", &data.ResponseData{})  // should expire
@@ -67,7 +70,9 @@ func TestLoadAndSave(t *testing.T) {
 	tmpfile, _ := os.CreateTemp("/tmp", "nodes")
 	config.StatePath = tmpfile.Name()
 	nodes.save()
-	os.Remove(tmpfile.Name())
+	if err := os.Remove(tmpfile.Name()); err != nil {
+		fmt.Printf("during cleanup: %s\n", err)
+	}
 
 	assert.Panics(func() {
 		SaveJSON(nodes, "/proc/a")
@@ -79,7 +84,9 @@ func TestLoadAndSave(t *testing.T) {
 		SaveJSON(tmpfile.Name, tmpfile.Name())
 		// "json: unsupported type: func() string",
 	})
-	os.Remove(tmpfile.Name())
+	if err := os.Remove(tmpfile.Name()); err != nil {
+		fmt.Printf("during cleanup: %s\n", err)
+	}
 
 	//TODO how to test easy a failing renaming
 
@@ -89,8 +96,10 @@ func TestLoadAndSave(t *testing.T) {
 func TestUpdateNodes(t *testing.T) {
 	assert := assert.New(t)
 	nodes := &Nodes{
-		List:          make(map[string]*Node),
-		ifaceToNodeID: make(map[string]string),
+		List:                make(map[string]*Node),
+		ifaceToNodeID:       make(map[string]string),
+		ifaceToLinkType:     make(map[string]LinkType),
+		ifaceToLinkProtocol: make(map[string]LinkProtocol),
 	}
 	assert.Len(nodes.List, 0)
 
@@ -156,8 +165,10 @@ func TestLinksNodes(t *testing.T) {
 	assert := assert.New(t)
 
 	nodes := &Nodes{
-		List:          make(map[string]*Node),
-		ifaceToNodeID: make(map[string]string),
+		List:                make(map[string]*Node),
+		ifaceToNodeID:       make(map[string]string),
+		ifaceToLinkType:     make(map[string]LinkType),
+		ifaceToLinkProtocol: make(map[string]LinkProtocol),
 	}
 	assert.Len(nodes.List, 0)
 
