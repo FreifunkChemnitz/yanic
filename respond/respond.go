@@ -21,7 +21,7 @@ const (
 	PortDefault = 1001
 
 	// maximum receivable size
-	MaxDataGramSize = 8192
+	MaxDataGramSize = 65535
 )
 
 // Response of the respond request
@@ -58,7 +58,7 @@ func (res *Response) parse(customFields []CustomFieldConfig) (*data.ResponseData
 	// Deflate
 	deflater := flate.NewReader(bytes.NewReader(res.Raw))
 	defer func() {
-		if err := deflater.Close(); err != nil {
+		if err := deflater.Close(); err != nil && err != io.ErrUnexpectedEOF {
 			log.WithError(err).Error("failed to close uncompression")
 		}
 	}()
