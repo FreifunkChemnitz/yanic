@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/flate"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 
@@ -59,12 +60,12 @@ func (res *Response) parse(customFields []CustomFieldConfig) (*data.ResponseData
 	deflater := flate.NewReader(bytes.NewReader(res.Raw))
 	defer func() {
 		if err := deflater.Close(); err != nil {
-			log.WithError(err).Error("failed to close uncompression")
+			log.WithError(err).WithField("node", res.Address).Error("failed to close uncompression")
 		}
 	}()
 	jsonData, err := io.ReadAll(deflater)
 	if err != nil && err != io.ErrUnexpectedEOF {
-		return nil, err
+		return nil, fmt.Errorf("node %s: %w", res.Address, err)
 	}
 
 	// Unmarshal
