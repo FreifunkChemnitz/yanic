@@ -59,7 +59,7 @@ func (res *Response) parse(customFields []CustomFieldConfig) (*data.ResponseData
 	// Deflate
 	deflater := flate.NewReader(bytes.NewReader(res.Raw))
 	defer func() {
-		if err := deflater.Close(); err != nil && err != io.ErrUnexpectedEOF {
+		if err := deflater.Close(); err != nil {
 			log.WithError(err).WithField("node", res.Address).Error("failed to close uncompression")
 		}
 	}()
