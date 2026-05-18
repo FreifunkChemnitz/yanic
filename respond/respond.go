@@ -21,7 +21,7 @@ const (
 	PortDefault = 1001
 
 	// maximum receivable size
-	MaxDataGramSize = 65535
+	MaxDataGramSize = 16384
 )
 
 // Response of the respond request
