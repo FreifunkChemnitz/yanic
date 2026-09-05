@@ -20,8 +20,9 @@ const (
 	// default udp port used by announced
 	PortDefault = 1001
 
-	// maximum receivable size
-	MaxDataGramSize = 8192
+	// maximum receivable size (max UDP payload, so a large single-datagram
+	// message is never truncated)
+	MaxDataGramSize = 65507
 )
 
 // Response of the respond request

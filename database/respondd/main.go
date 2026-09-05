@@ -4,7 +4,7 @@ package respondd
  * This database type is for injecting into another yanic instance.
  */
 import (
-	"bufio"
+	"bytes"
 	"compress/flate"
 	"encoding/json"
 	"net"
@@ -58,20 +58,15 @@ func (conn *Connection) InsertNode(node *runtime.Node) {
 		Neighbours: node.Neighbours,
 	}
 
-	writer := bufio.NewWriterSize(conn.conn, 8192)
-
-	flater, err := flate.NewWriter(writer, flate.BestCompression)
+	// Compress into memory and write once, so the message is always sent as a
+	// single UDP datagram instead of being auto-split by a bufio.Writer.
+	buf := new(bytes.Buffer)
+	flater, err := flate.NewWriter(buf, flate.BestCompression)
 	if err != nil {
 		logger.WithError(err).Error("could not create flater")
 		return
 	}
-	defer func() {
-		if err := flater.Close(); err != nil {
-			logger.WithError(err).Error("could not close flater")
-		}
-	}()
-	err = json.NewEncoder(flater).Encode(res)
-	if err != nil {
+	if err := json.NewEncoder(flater).Encode(res); err != nil {
 		nodeid := "unknown"
 		if node.Nodeinfo != nil && node.Nodeinfo.NodeID != "" {
 			nodeid = node.Nodeinfo.NodeID
@@ -79,12 +74,12 @@ func (conn *Connection) InsertNode(node *runtime.Node) {
 		logger.WithError(err).WithField("node_id", nodeid).Error("could not encode node")
 		return
 	}
-	err = flater.Flush()
-	if err != nil {
+	// Close (not Flush) is required to terminate the DEFLATE stream.
+	if err := flater.Close(); err != nil {
 		logger.WithError(err).Error("could not compress")
+		return
 	}
-	err = writer.Flush()
-	if err != nil {
+	if _, err := conn.conn.Write(buf.Bytes()); err != nil {
 		logger.WithError(err).Error("could not send")
 	}
 }
